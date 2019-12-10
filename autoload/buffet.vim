@@ -31,8 +31,8 @@ let s:path_separator = fnamemodify(getcwd(),':p')[-1:]
 
 function! buffet#update()
 
-    " Phase I: Init or Update some basic info
-    " =======================================
+    " Phase I: Init or Update buffers basic info
+    " ==========================================
     let largest_buffer_id = max([bufnr('$'), s:largest_buffer_id])
 
     for buffer_id in range(1, largest_buffer_id)
@@ -46,9 +46,12 @@ function! buffet#update()
                 call remove(s:buffers, buffer_id)
                 call remove(s:buffer_ids, index(s:buffer_ids, buffer_id))
 
-                if buffer_id == s:last_current_buffer_id    " XXX?
+                " Reassign because the buffer of s:last_current_buffer_id is
+                " clear ? For bdelete case only ?
+                if buffer_id == s:last_current_buffer_id
                     let s:last_current_buffer_id = -1
                 endif
+
                 let s:largest_buffer_id = max(s:buffer_ids)
             endif
             continue
@@ -57,7 +60,7 @@ function! buffet#update()
         " If this buffer is already tracked and listed, we're good.
         " In case if it is the only buffer, still update, because an empty new
         " buffer id is being replaced by a buffer for an existing file.
-        if is_tracked && len(s:buffers) > 1     " XXX?
+        if is_tracked && len(s:buffers) > 1
             continue
         endif
 
@@ -107,8 +110,8 @@ function! buffet#update()
         endfor
     endwhile
 
-    " Phase III: Update s:last_current_buffer_id
-    " ==========================================
+    " Phase III: Update current buffer, s:last_current_buffer_id
+    " ==========================================================
     let current_buffer_id = bufnr('%')
 
     if has_key(s:buffers, current_buffer_id)
@@ -187,7 +190,7 @@ endfunction
 " @buf :Dictionary: the buffer
 "
 " => | Dictionary: return the following dic OR an empty dic {} if a:now_new == 0
-"   +{buf.name} :Number: current_count
+"   ${buf.name} :Number: current_count
 " ---
 function! s:RecordOcc(buffer_name_count, buf) abort
     if a:buf.not_new
@@ -202,9 +205,9 @@ endfunction
 " @buf :Dictionary: buffer item from buffers{}
 "
 " => buffer{} :Dictionary:
-"   -index  :Number: decrease the index
-"   -name   :String:
-"   -length :Number:
+"   $index  :Number: decrease the index
+"   $name   :String:
+"   $length :Number:
 function! s:UpdateOccState(buf) abort
     let buffer_path = a:buf.head[a:buf.index:]
     call add(buffer_path, a:buf.tail)
@@ -218,10 +221,11 @@ function! s:UpdateOccState(buf) abort
 endfunction
 
 
-
-
-" =============================================================================
-
+" UI ==========================================================================
+function! buffet#render()
+    call buffet#update()
+    return s:Render()
+endfunction
 
 
 function! s:Render()
@@ -300,44 +304,42 @@ function! s:Render()
 endfunction
 
 
-function! s:GetVisibleRange(length_limit, buffer_padding)
-    let current_buffer_id = s:last_current_buffer_id
+" `GetTablineElements`
+" GetAllElements:
+"
+" => tab_elems{} (Dict): Return Tabline Elements:
+"   - Tab(s)
+"   - Buffers(s)
+"   - End
+" ---
+function! s:GetAllElements(capacity, buffer_padding)
+    let last_tab_id     = tabpagenr('$')
+    let current_tab_id  = tabpagenr()
+    let buffer_elems    = s:GetBufferElements(a:capacity, a:buffer_padding)
+    let end_elem        = {"type": "End", "value": ""}
 
-    if current_buffer_id == -1
-        return [-1, -1]
-    endif
+    let tab_elems = []
 
-    let current_buffer_id_idx = index(s:buffer_ids, current_buffer_id)
+    for tab_id in range(1, last_tab_id)
+        " Tab(s)
+        let elem = {}
+        let elem.value = tab_id
+        let elem.type = "Tab"
+        call add(tab_elems, elem)
 
-    let current_buffer = s:buffers[current_buffer_id]
-
-    let capacity = a:length_limit - current_buffer.length - a:buffer_padding
-
-    let left_idx = current_buffer_id_idx
-    let right_i = current_buffer_id_idx
-
-    for left_idx in range(current_buffer_id_idx - 1, 0, -1)
-        let buffer = s:buffers[s:buffer_ids[left_idx]]
-        if (buffer.length + a:buffer_padding) <= capacity
-            let capacity = capacity - buffer.length - a:buffer_padding
-        else
-            let left_idx = left_idx + 1
-            break
+        " Buffer(s)
+        if tab_id == current_tab_id
+            let tab_elems = tab_elems + buffer_elems
         endif
     endfor
 
-    for right_i in range(current_buffer_id_idx + 1, len(s:buffers) - 1)
-        let buffer = s:buffers[s:buffer_ids[right_i]]
-        if (buffer.length + a:buffer_padding) <= capacity
-            let capacity = capacity - buffer.length - a:buffer_padding
-        else
-            let right_i = right_i - 1
-            break
-        endif
-    endfor
+    " End
+    call add(tab_elems, end_elem)
 
-    return [left_idx, right_i]
+    return tab_elems
 endfunction
+
+
 
 function! s:GetBufferElements(capacity, buffer_padding)
     let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
@@ -395,28 +397,78 @@ function! s:GetBufferElements(capacity, buffer_padding)
     return buffer_elems
 endfunction
 
-function! s:GetAllElements(capacity, buffer_padding)
-    let last_tab_id = tabpagenr('$')
-    let current_tab_id = tabpagenr()
-    let buffer_elems = s:GetBufferElements(a:capacity, a:buffer_padding)
-    let tab_elems = []
 
-    for tab_id in range(1, last_tab_id)
-        let elem = {}
-        let elem.value = tab_id
-        let elem.type = "Tab"
-        call add(tab_elems, elem)
 
-        if tab_id == current_tab_id
-            let tab_elems = tab_elems + buffer_elems
+
+" GetVisibleRange: 
+" @length_limit (Number)
+" @buffer_padding (Number)
+"
+" => (List): (Numbers):
+"   $1|left_idx: Number of names trunced_left
+"   $2|right_idx: 
+" ---
+function! s:GetVisibleRange(length_limit, buffer_padding)
+    let current_buffer_id = s:last_current_buffer_id
+
+    if current_buffer_id == -1
+        return [-1, -1]
+    endif
+
+    let current_buffer_id_idx = index(s:buffer_ids, current_buffer_id)
+    let current_buffer        = s:buffers[current_buffer_id]
+
+    let capacity = a:length_limit - current_buffer.length - a:buffer_padding
+
+    let [left_idx, capacity] = s:GetTruncedItems(current_buffer_id_idx,
+        \   capacity, a:buffer_padding, 'left')
+    let [right_idx, capacity] = s:GetTruncedItems(current_buffer_id_idx,
+        \   capacity, a:buffer_padding, 'right')
+
+    return [left_idx, right_idx]
+endfunction
+
+
+" GetTruncedItems: Calculate trunced items from the capacity.
+" @bufid_idx (Number):
+" current_buffer_id_idx
+" "left"
+" capacity after remove current_buffer
+" padding
+" => (List):
+"   $1|{idx} (Number): the number of trunced items
+"   $2|{capacity} (Number): the capacity left after calculated
+"
+" Description: Trunced buffers below and above of current buffer; Left is
+" looped down and vice versa;
+"           _
+" | 0 | 1 | 2 | 3 |
+" ===
+function! s:GetTruncedItems(bufid_idx, capacity, padding, side)
+    let start = (a:side=='left' ? a:bufid_idx-1 : a:bufid_idx+1 )
+    let end   = (a:side=='left' ? 0             : len(s:buffers)-1 )
+    let step  = (a:side=='left' ? -1            : 1 )
+
+    let cap   = a:capacity
+    let idx   = v:null
+
+    for idx in range(start, end, step)
+        " Because buffers{} doesn't store buffers in order, that's why we need
+        " buffer_ids
+        let buffer = s:buffers[s:buffer_ids[idx]]
+
+        if (buffer.length + a:padding) <= cap
+            let cap = cap - buffer.length - a:padding
+        else
+            let idx = (a:side=='left' ? idx+1 : idx-1 )
+            break           " If I don't set this there will be an error with the buffer at last
         endif
     endfor
 
-    let end_elem = {"type": "End", "value": ""}
-    call add(tab_elems, end_elem)
-
-    return tab_elems
+    return [idx, cap]
 endfunction
+
+
 
 function! s:IsBufferElement(element)
     if index(g:buffet_buffer_types, a:element.type) >= 0
@@ -437,10 +489,6 @@ function! s:GetTypeHighlight(type)
 endfunction
 
 
-function! buffet#render()
-    call buffet#update()
-    return s:Render()
-endfunction
 
 function! s:GetBuffer(buffer)
     if empty(a:buffer) && s:last_current_buffer_id >= 0
