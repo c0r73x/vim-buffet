@@ -11,6 +11,13 @@
 "   -length :Number: filename length
 let s:buffers = {}
 
+" buffer_ids - Because buffers{} doesn't store buffers in order,
+" that's why we need this for UI process
+"
+" => (List)-Numbers:
+"   ${buffet_id}: buffer id; list indexes is the order
+"
+" Future Feature: (XXX) I think we can reorder this to employment swap buffers.
 let s:buffer_ids = []
 
 " when the focus switches to another *unlisted* buffer, it does not appear in
@@ -404,6 +411,7 @@ function! s:GetBufferElements(capacity, buffer_padding)
 endfunction
 
 
+
 " GetVisibleRange: 
 " @length_limit (Number)
 " @buffer_padding (Number)
@@ -457,8 +465,6 @@ function! s:GetTruncedItems(bufid_idx, capacity, padding, side)
     let idx   = v:null
 
     for idx in range(start, end, step)
-        " Because buffers{} doesn't store buffers in order, that's why we need
-        " buffer_ids
         let buffer = s:buffers[s:buffer_ids[idx]]
 
         if (buffer.length + a:padding) <= cap
