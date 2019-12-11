@@ -320,10 +320,16 @@ endfunction
 " GetAllElements:
 " `GetTablineElements`
 "
-" => tab_elems[]:
-"   $1|tabs{} = value | type
-"   $2|buffers[{}] = ...
-"   $3|end{} =
+" TODO: This will stored 1 tab and its buffers, then repeat(loop), finally 
+" is the end, you need to do something to clean this
+" => tab_elems[]: elements in s:Render()
+"   $1|tabs{}1
+"   $2|buffers_elem{}s
+"   ...
+"   $*|tabs{}2
+"   $*|buffers_elem{}s
+"   ...
+"   $$|end{} =
 " ---
 function! s:GetAllElements(capacity, buffer_padding)
     let last_tab_id     = tabpagenr('$')
@@ -355,16 +361,16 @@ endfunction
 
 
 " GetBufferElements:
-" 
 " => buffer_elems[{}] (List)-dict:
-"   $1|left_trunc_elem{}:
-"   $2|visible_buffers{}:
-"       index + 1 ???
-"       value = buffer.name
-"       buffer_id
-"       is_modified
-"       type_prefix
-"   $3|right_trunc_elem{}:
+"   $1|left_trunc_elem{}
+"   $2|visual_buffers{}:
+"       index: s:buffer_ids[] start with idx:0, so we need to +1 to display
+"       value: name will be displayed
+"       buffer_id:
+"       type_prefix:
+"   ...
+"   $$|right_trunc_elem{}
+" ===
 function! s:GetBufferElements(capacity, buffer_padding)
     let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
     " TODO: evaluate if calling this ^ twice will get better visuals
