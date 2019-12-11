@@ -1,24 +1,26 @@
-" buffers - Track listed buffers
-" +{buffer_id} :Dictionary: buffer_id is key, contain following items:
+" buffers (Dict) - Track listed buffers
+" ---
+" +{buffer_id} (Dict): buffer_id is key
 " Basic Info:
-"   -head    :List: buffer's directory abspath, split by `s:path_separator`
-"   -not_new :Number: it's not new if len(@tail) > 0; not [No Name] file ?
-"   -tail    :String: buffer's filename
+"   $head (List)-str: buffer's directory abspath, split by `s:path_separator`
+"   $not_new (Number): it's not new if len(@tail) > 0; not [No Name] file ?
+"   $tail (String): buffer's filename
 " State Info:
-"   -index  :Number: (-1) index for taking @head's basename, combine with
-"     @name to distinguish identical filename, decrease if still identical
-"   -name   :String: filename to display on tabline
-"   -length :Number: filename length
+"   $index (Number)(-1): index for $head[$index] + $tail = $name
+"     to distinguish identical filename, decrease if still identical
+"   $name (String): filename to display on tabline
+"   $length (Number): filename length
 let s:buffers = {}
+
 
 " buffer_ids - Because buffers{} doesn't store buffers in order,
 " that's why we need this for UI process
-"
-" => (List)-Numbers:
+" ---
+" => (List)-number:
 "   ${buffet_id}: buffer id; list indexes is the order
-"
-" Future Feature: (XXX) I think we can reorder this to employment swap buffers.
+" Future Feature: (XXX) I think we can reorder this to reorder buffer's position
 let s:buffer_ids = []
+
 
 " when the focus switches to another *unlisted* buffer, it does not appear in
 " the tabline, thus the tabline will list starting from the first buffer. For
@@ -26,13 +28,16 @@ let s:buffer_ids = []
 " in the same place.
 let s:last_current_buffer_id = -1
 
+
 " when you delete a buffer with the highest ID, we will never loop up there and
 " it will always stay in the buffers list, so we need to remember the largest
 " buffer ID.
 let s:largest_buffer_id = 1
 
+
 " either a slash or backslash
 let s:path_separator = fnamemodify(getcwd(),':p')[-1:]
+
 
 " ======================
 
@@ -53,7 +58,7 @@ function! buffet#update()
                 call remove(s:buffers, buffer_id)
                 call remove(s:buffer_ids, index(s:buffer_ids, buffer_id))
 
-                " Reassign because the buffer of s:last_current_buffer_id is
+                " (XXX) Reassign because the buffer of s:last_current_buffer_id is
                 " clear ? For bdelete case only ?
                 if buffer_id == s:last_current_buffer_id
                     let s:last_current_buffer_id = -1
@@ -90,8 +95,8 @@ function! buffet#update()
 
     " Phase II: Handling identical filenames
     " ======================================
-    " buffer_name_count - Memoize identical filenames
-    " +{buffer.name} :Number: count
+    " buffer_name_count (Dict) - Memoize identical filenames
+    "   +{buffer.name} (Number): count
     let buffer_name_count = {}
 
     " Set initial buffer name, and record occurrences
@@ -106,7 +111,7 @@ function! buffet#update()
         let ambiguous = buffer_name_count
         let buffer_name_count = {}
 
-        " Update buffer name; and record occurrences after changed
+        " Update buffer name; and record occurrences after updated
         for buffer in values(s:buffers)
             if has_key(ambiguous, buffer.name)
                 let buffer = extend(buffer, s:UpdateOccState(buffer))
@@ -117,20 +122,20 @@ function! buffet#update()
         endfor
     endwhile
 
-    " Phase III: Update current buffer, s:last_current_buffer_id
-    " ==========================================================
+    " Phase III: Update `s:last_current_buffer_id`
+    " ==========================================
     let current_buffer_id = bufnr('%')
 
     if has_key(s:buffers, current_buffer_id)
         let s:last_current_buffer_id = current_buffer_id
-    " FIXME: Delete this !!!
+    " (XXX) I don't know when this will be triggered
     elseif s:last_current_buffer_id == -1 && len(s:buffer_ids) > 0
         let s:last_current_buffer_id = s:buffer_ids[0]
     endif
 
     " Phase IV: Misc
     " ===============
-    " FIXME: Break this !!!
+    " FIXME: Break this to some where or leave it :)
     " Hide tabline if only one buffer and tab open
     if !g:buffet_always_show_tabline && len(s:buffer_ids) == 1 && tabpagenr("$") == 1
         set showtabline=0
@@ -138,11 +143,10 @@ function! buffet#update()
 endfunction
 
 
-" IsTermOrQuickfix - Return TRUE (1) if it's a Terminal or Quickfix buffer
-" @bufid | Number: buffer_id is used to check
-"
-" => :Boolean:
-" ---
+" IsTermOrQuickfix: Return TRUE(1) if it's a Terminal or Quickfix buffer.
+" @bufid (Number): buffer id is used to check
+" => (Boolean): FALSE(0) if not
+" ===
 function! s:IsTermOrQuickfix(bufid) abort
     let buffer_type = getbufvar(a:bufid, "&buftype", "")
     if index(["terminal", "quickfix"], buffer_type) >= 0
@@ -152,14 +156,15 @@ function! s:IsTermOrQuickfix(bufid) abort
 endfunction
 
 
-" ComposeBufferInfo - Compose @head, @not_new, @tail of buffers{} based on buffer_id
-" @bufid | Number: buffer_id
+" ComposeBufferInfo: Compose basic info: $head, $not_new, $tail based on
+" the buffer id is given.
+" @bufid (Number) buffer id used to retrieve
 "
-" => buffer{} | Dictionary: Return a dictionary contains 3 items:
-"   -head | String:
-"   -now_new | Number:
-"   -tail | String:
-" ---
+" => buffer{} (Dict): return a dictionary contains 3 items:
+"   $head (String): UNDERSTAND THESE 3 at `s:buffers`
+"   $now_new (Number)
+"   $tail (String)
+" ===
 function! s:ComposeBufferInfo(bufid) abort
     let buffer_name = bufname(a:bufid)
     let buffer_head = fnamemodify(buffer_name, ':p:h')
@@ -175,16 +180,17 @@ function! s:ComposeBufferInfo(bufid) abort
 endfunction
 
 
-" InitAndRecordOcc - Init buffer's state and record occurrences
-" @buf | Dictionary: the buffer
+" InitOccState: Init buffer's state.
+" @buf (Dict): the buffer
 "
-" => buffer{} | Dictionary:
-"    -index
-"    -name
-"    -length
+" => buffer{} (Dict): UNDERSTAND THESE 3 at `s:buffers{}`
+"    $index (Number)
+"    $name (String)
+"    $length (Number)
+" ===
 function! s:InitOccState(buf) abort
     let buffer = {}
-    let buffer.index = -1
+    let buffer.index = -1           " default value of $index
     let buffer.name = a:buf.tail
     let buffer.length = len(buffer.name)
 
@@ -192,13 +198,13 @@ function! s:InitOccState(buf) abort
 endfunction
 
 
-" RecordOcc - Record occurrences
-" @buffer_name_count :Dictionary:
-" @buf :Dictionary: the buffer
+" RecordOcc: Record occurrences.
+" @buffer_name_count (Dict): `buffer_name_count`
+" @buf (Dict): the buffer
 "
-" => | Dictionary: return the following dic OR an empty dic {} if a:now_new == 0
-"   ${buf.name} :Number: current_count
-" ---
+" => (Dict): return the following Dict OR an Empty Dict {} if $not_new == 0
+"   ${buf.name} (Number): {current_count}
+" ===
 function! s:RecordOcc(buffer_name_count, buf) abort
     if a:buf.not_new
         let l:current_count = get(a:buffer_name_count, a:buf.name, 0)
@@ -208,13 +214,13 @@ function! s:RecordOcc(buffer_name_count, buf) abort
 endfunction
 
 
-" UpdateOccState - Update buffers's state
-" @buf :Dictionary: buffer item from buffers{}
+" UpdateOccState: Update buffers's state.
+" @buf (Dict): a buffer item from `s:buffers`
 "
-" => buffer{} :Dictionary:
-"   $index  :Number: decrease the index
-"   $name   :String:
-"   $length :Number:
+" => buffer{} (Dict)
+"   $index (Number): decrease the index
+"   $name (String)
+"   $length (Number)
 function! s:UpdateOccState(buf) abort
     let buffer_path = a:buf.head[a:buf.index:]
     call add(buffer_path, a:buf.tail)
@@ -311,13 +317,13 @@ function! s:Render()
 endfunction
 
 
-" `GetTablineElements`
 " GetAllElements:
+" `GetTablineElements`
 "
 " => tab_elems[]:
 "   $1|tabs{} = value | type
 "   $2|buffers[{}] = ...
-"   $3|end{} = 
+"   $3|end{} =
 " ---
 function! s:GetAllElements(capacity, buffer_padding)
     let last_tab_id     = tabpagenr('$')
@@ -350,9 +356,15 @@ endfunction
 
 " GetBufferElements:
 " 
-" => buffer_elems[{}] (List)-Dicts:
+" => buffer_elems[{}] (List)-dict:
 "   $1|left_trunc_elem{}:
-"   $2|
+"   $2|visible_buffers{}:
+"       index + 1 ???
+"       value = buffer.name
+"       buffer_id
+"       is_modified
+"       type_prefix
+"   $3|right_trunc_elem{}:
 function! s:GetBufferElements(capacity, buffer_padding)
     let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
     " TODO: evaluate if calling this ^ twice will get better visuals
@@ -410,16 +422,17 @@ function! s:GetBufferElements(capacity, buffer_padding)
     return buffer_elems
 endfunction
 
-
-
-" GetVisibleRange: 
+" GetVisibleRange: Return the start and end index of the visible range.
 " @length_limit (Number)
 " @buffer_padding (Number)
 "
-" => (List): (Numbers):
-"   $1|left_idx: Number of names trunced_left
-"   $2|right_idx: 
-" ---
+" => (List)-number:
+"   $1|left_idx
+"   $2|right_idx
+" What Is Visible Range:?
+" - The visible range is the start and end index of `s:buffer_ids`. What's in it
+"   will be displayed and of course what's not in it will be trunced.
+" ===
 function! s:GetVisibleRange(length_limit, buffer_padding)
     let current_buffer_id = s:last_current_buffer_id
 
@@ -427,42 +440,46 @@ function! s:GetVisibleRange(length_limit, buffer_padding)
         return [-1, -1]
     endif
 
+    " Current buffer block:
+    " calculate the capacity left after extracted for the current bufer
     let current_buffer_id_idx = index(s:buffer_ids, current_buffer_id)
     let current_buffer        = s:buffers[current_buffer_id]
-
     let capacity = a:length_limit - current_buffer.length - a:buffer_padding
 
-    let [left_idx, capacity] = s:GetTruncedItems(current_buffer_id_idx,
+    let [left_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
         \   capacity, a:buffer_padding, 'left')
-    let [right_idx, capacity] = s:GetTruncedItems(current_buffer_id_idx,
+    let [right_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
         \   capacity, a:buffer_padding, 'right')
 
     return [left_idx, right_idx]
 endfunction
-" ===
-" GetTruncedItems: Calculate trunced items from the capacity.
-" GetTruncedIndex XXX
-" @bufid_idx (Number):
-" current_buffer_id_idx
-" "left"
-" capacity after remove current_buffer
-" padding
-" => (List):
-"   $1|{idx} (Number): the number of trunced items
-"   $2|{capacity} (Number): the capacity left after calculated
+
+" GetVisibleIndex: Calculate how many buffers need to trunc of @side
+" from @capacity, and return visible index of that @side.
+" ---
+" @curr_bufid_idx (Number): s:buffer_ids holds buffers position, so we need this
+" @capacity (Number): capacity
+" @padding (Number): padding
+" @side (String): 'left' or 'right'
+" ---
+" => (List)-number:
+"   $1|{idx}: the number of trunced items
+"   $2|{capacity}: the capacity left after calculated
 "
-" Description: Trunced buffers below and above of current buffer; Left is
-" looped down and vice versa;
+" Description:
+" Trunced buffers below and above of current buffer;
+" Left is looped down and vice versa;
+" The index return is the start(end) index of the visible range.
 "           _
 " | 0 | 1 | 2 | 3 |
 " ===
-function! s:GetTruncedItems(bufid_idx, capacity, padding, side)
-    let start = (a:side=='left' ? a:bufid_idx-1 : a:bufid_idx+1 )
-    let end   = (a:side=='left' ? 0             : len(s:buffers)-1 )
-    let step  = (a:side=='left' ? -1            : 1 )
+function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
+    let start = (a:side==#'left' ? a:curr_bufid_idx-1 : a:curr_bufid_idx+1)
+    let end   = (a:side==#'left' ? 0                  : len(s:buffers)-1)
+    let step  = (a:side==#'left' ? -1                 : 1)
 
-    let cap   = a:capacity
     let idx   = v:null
+    let cap   = a:capacity
 
     for idx in range(start, end, step)
         let buffer = s:buffers[s:buffer_ids[idx]]
@@ -471,7 +488,8 @@ function! s:GetTruncedItems(bufid_idx, capacity, padding, side)
             let cap = cap - buffer.length - a:padding
         else
             let idx = (a:side=='left' ? idx+1 : idx-1 )
-            break           " If I don't set this there will be an error with the buffer at last
+            break   " (XXX?) If don't set this there will be an error 
+                    " with the buffer at last
         endif
     endfor
 
