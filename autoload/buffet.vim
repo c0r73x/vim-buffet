@@ -307,10 +307,10 @@ endfunction
 " `GetTablineElements`
 " GetAllElements:
 "
-" => tab_elems{} (Dict): Return Tabline Elements:
-"   - Tab(s)
-"   - Buffers(s)
-"   - End
+" => tab_elems[]:
+"   $1|tabs{} = value | type
+"   $2|buffers[{}] = ...
+"   $3|end{} = 
 " ---
 function! s:GetAllElements(capacity, buffer_padding)
     let last_tab_id     = tabpagenr('$')
@@ -341,6 +341,11 @@ endfunction
 
 
 
+" GetBufferElements:
+" 
+" => buffer_elems[{}] (List)-Dicts:
+"   $1|left_trunc_elem{}:
+"   $2|
 function! s:GetBufferElements(capacity, buffer_padding)
     let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
     " TODO: evaluate if calling this ^ twice will get better visuals
@@ -359,6 +364,7 @@ function! s:GetBufferElements(capacity, buffer_padding)
         call add(buffer_elems, left_trunc_elem)
     endif
 
+    " Visible buffers
     for i in range(left_i, right_i)
         let buffer_id = s:buffer_ids[i]
         let buffer = s:buffers[buffer_id]
@@ -398,8 +404,6 @@ function! s:GetBufferElements(capacity, buffer_padding)
 endfunction
 
 
-
-
 " GetVisibleRange: 
 " @length_limit (Number)
 " @buffer_padding (Number)
@@ -427,9 +431,9 @@ function! s:GetVisibleRange(length_limit, buffer_padding)
 
     return [left_idx, right_idx]
 endfunction
-
-
+" ===
 " GetTruncedItems: Calculate trunced items from the capacity.
+" GetTruncedIndex XXX
 " @bufid_idx (Number):
 " current_buffer_id_idx
 " "left"
@@ -470,13 +474,26 @@ endfunction
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function! s:IsBufferElement(element)
     if index(g:buffet_buffer_types, a:element.type) >= 0
         return 1
     endif
-
     return 0
 endfunction
+
 
 function! s:Len(string)
     let visible_singles = substitute(a:string, '[^\d0-\d127]', "-", "g")
