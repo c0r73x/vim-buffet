@@ -431,7 +431,6 @@ endfunction
 " GetVisibleRange: Return the start and end index of the visible range.
 " @length_limit (Number)
 " @buffer_padding (Number)
-"
 " => (List)-number:
 "   $1|left_idx
 "   $2|right_idx
@@ -460,7 +459,7 @@ function! s:GetVisibleRange(length_limit, buffer_padding)
     return [left_idx, right_idx]
 endfunction
 
-" GetVisibleIndex: Calculate how many buffers need to trunc of @side
+" GetVisibleIndex: Calculate how many buffers need to truncate of @side
 " from @capacity, and return visible index of that @side.
 " ---
 " @curr_bufid_idx (Number): s:buffer_ids holds buffers position, so we need this
@@ -469,22 +468,18 @@ endfunction
 " @side (String): 'left' or 'right'
 " ---
 " => (List)-number:
-"   $1|{idx}: the number of trunced items
+"   $1|{idx}: the visible index
 "   $2|{capacity}: the capacity left after calculated
-"
-" Description:
-" Trunced buffers below and above of current buffer;
-" Left is looped down and vice versa;
-" The index return is the start(end) index of the visible range.
-"           _
-" | 0 | 1 | 2 | 3 |
 " ===
 function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
+    " Truncate buffers below and above of current buffer,
+    " left is looped down and vice versa
     let start = (a:side==#'left' ? a:curr_bufid_idx-1 : a:curr_bufid_idx+1)
     let end   = (a:side==#'left' ? 0                  : len(s:buffers)-1)
     let step  = (a:side==#'left' ? -1                 : 1)
 
-    let idx   = v:null
+    " If start == end, we cannot run loop, so we need something to return
+    let idx   = a:curr_bufid_idx
     let cap   = a:capacity
 
     for idx in range(start, end, step)
@@ -493,9 +488,9 @@ function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
         if (buffer.length + a:padding) <= cap
             let cap = cap - buffer.length - a:padding
         else
+            " The visual index, not the truncated index
             let idx = (a:side=='left' ? idx+1 : idx-1 )
-            break   " (XXX?) If don't set this there will be an error 
-                    " with the buffer at last
+            break
         endif
     endfor
 
