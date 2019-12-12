@@ -235,28 +235,20 @@ endfunction
 
 
 " UI ==========================================================================
+
+
+
 function! buffet#render()
     call buffet#update()
-    return s:Render()
-endfunction
 
+    let [capacity, buffer_padding] = s:GetCapacityAndPadding()
 
-function! s:Render()
-    let sep_len = s:Len(g:buffet_separator)
+    let [left_idx, right_idx] = s:GetVisibleRange(capacity, buffer_padding)
 
-    let tabs_count = tabpagenr("$")
-    let tabs_len = (1 + s:Len(g:buffet_tab_icon) + 1 + sep_len) * tabs_count
-
-    let left_trunc_len = 1 + s:Len(g:buffet_left_trunc_icon) + 1 + 2 + 1 + sep_len
-    let right_trunc_len =  1 + 2 + 1 + s:Len(g:buffet_right_trunc_icon) + 1 + sep_len
-    let trunc_len = left_trunc_len + right_trunc_len
-
-    let capacity = &columns - tabs_len - trunc_len - 5
-    let buffer_padding = 1 + (g:buffet_use_devicons ? 1+1 : 0) + 1 + sep_len
-
-    let elements = s:GetAllElements(capacity, buffer_padding)
+    let elements = s:GetAllElements(left_idx, right_idx)
 
     let render = ""
+
     for i in range(0, len(elements) - 2)
         let left = elements[i]
         let elem = left
@@ -317,6 +309,24 @@ function! s:Render()
 endfunction
 
 
+function! s:GetCapacityAndPadding()
+    let sep_len = s:Len(g:buffet_separator)
+
+    let tabs_count = tabpagenr("$")
+    let tabs_len   = (1 + s:Len(g:buffet_tab_icon) + 1 + sep_len) * tabs_count
+
+    let left_trunc_len  = 1 + s:Len(g:buffet_left_trunc_icon) + 1 + 2 + 1 + sep_len
+    let right_trunc_len =  1 + 2 + 1 + s:Len(g:buffet_right_trunc_icon) + 1 + sep_len
+    let trunc_len       = left_trunc_len + right_trunc_len
+
+    let capacity       = &columns - tabs_len - trunc_len - 5
+    let buffer_padding = 1 + (g:buffet_use_devicons ? 1+1 : 0) + 1 + sep_len
+
+    return [capacity, buffer_padding]
+endfunction
+
+
+
 " GetAllElements:
 " `GetTablineElements`
 "
@@ -331,10 +341,10 @@ endfunction
 "   ...
 "   $$|end{} =
 " ---
-function! s:GetAllElements(capacity, buffer_padding)
+function! s:GetAllElements(left_idx, right_idx)
     let last_tab_id     = tabpagenr('$')
     let current_tab_id  = tabpagenr()
-    let buffer_elems    = s:GetBufferElements(a:capacity, a:buffer_padding)
+    let buffer_elems    = s:GetBufferElements(a:left_idx, a:right_idx)
     let end_elem        = {"type": "End", "value": ""}
 
     let tab_elems = []
@@ -371,8 +381,10 @@ endfunction
 "   ...
 "   $$|right_trunc_elem{}
 " ===
-function! s:GetBufferElements(capacity, buffer_padding)
-    let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
+function! s:GetBufferElements(left_idx, right_idx)
+    "let [left_i, right_i] = s:GetVisibleRange(a:capacity, a:buffer_padding)
+    let left_i = a:left_idx
+    let right_i = a:right_idx
     " TODO: evaluate if calling this ^ twice will get better visuals
 
     if left_i < 0 || right_i < 0
