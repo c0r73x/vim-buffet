@@ -310,18 +310,32 @@ endfunction
 
 
 " GetCapacityAndPadding:
+" What is these numbers ?
+" - 
 " ===================== {{{
 function! s:GetCapacityAndPadding()
-    let sep_len = s:Len(g:buffet_separator)
+    let gutter_len = 0
+    if g:buffet_margin_left ==# 'gutter'
+        let gutter_len = len(line('$'))+1
+    endif
 
     let tabs_count = tabpagenr("$")
-    let tabs_len   = (1 + s:Len(g:buffet_tab_icon) + 1 + sep_len) * tabs_count
+    let tabs_len   = (s:Len(g:buffet_tab_icon) + 1) * tabs_count
 
-    let left_trunc_len  = 1 + s:Len(g:buffet_left_trunc_icon) + 1 + 2 + 1 + sep_len
-    let right_trunc_len =  1 + 2 + 1 + s:Len(g:buffet_right_trunc_icon) + 1 + sep_len
-    let trunc_len       = left_trunc_len + right_trunc_len
+    " Same for both side
+    let sep_len         = s:Len(g:buffet_separator_left)
+    let trunc_icon_len  = s:Len(g:buffet_left_trunc_icon)
+    " this's tricky, we calc trunced nums after this, so 2 for safe case
+    " TODO: <pri:LOW> find a way to fix this issue
+    let trunc_nums_len  = 2
+    let trunc_len = (sep_len + trunc_icon_len + 1+trunc_nums_len + sep_len+1)*2
 
-    let capacity       = &columns - tabs_len - trunc_len - 5
+    "let left_trunc_len  = 1 + s:Len(g:buffet_left_trunc_icon) + 1 + 2 + 1 + sep_len
+    "let right_trunc_len =  1 + 2 + 1 + s:Len(g:buffet_right_trunc_icon) + 1 + sep_len
+    "let trunc_len       = left_trunc_len + right_trunc_len
+
+    "let capacity       = &columns - tabs_len - trunc_len - 5
+    let capacity = $columns - gutter_len - tabs_len - trunc_len - 5
     let buffer_padding = 1 + (g:buffet_use_devicons ? 1+1 : 0) + 1 + sep_len
 
     return [capacity, buffer_padding]

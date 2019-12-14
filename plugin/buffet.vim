@@ -20,11 +20,14 @@ if has("gui")
 endif
 
 
-let g:bufet_margin_left = get(g:, 'bufet_margin_left', 5)
 
 let g:buffet_show_index = get(g:, "buffet_show_index", 0)
 
 let g:buffet_max_plug = get(g:, "buffet_max_plug", 10)
+
+" ### Customize ### {{{
+let g:buffet_margin_left = get(g:, 'buffet_margin_left', 'gutter')
+" }}}
 
 " ### Separator ### {{{
 if get(g:, "buffet_powerline_separators", 0)
@@ -37,6 +40,8 @@ else
     let g:buffet_powerline_separators = 0
     let g:buffet_noseparator = get(g:, "buffet_noseparator", " ")
     let g:buffet_separator = get(g:, "buffet_separator", "|")
+    let g:buffet_separator_left  = ''
+    let g:buffet_separator_right = ''
 endif
 " ================= }}}
 
