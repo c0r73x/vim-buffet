@@ -309,6 +309,8 @@ function! buffet#render()
 endfunction
 
 
+" GetCapacityAndPadding:
+" ===================== {{{
 function! s:GetCapacityAndPadding()
     let sep_len = s:Len(g:buffet_separator)
 
@@ -324,10 +326,83 @@ function! s:GetCapacityAndPadding()
 
     return [capacity, buffer_padding]
 endfunction
+" ===================== }}}
 
+
+" GetVisibleRange: Return the start and end index of the visible range.
+" ================ {{{
+" @length_limit (Number)
+" @buffer_padding (Number)
+" => (List)-number:
+"   $1|left_idx
+"   $2|right_idx
+" What Is Visible Range:?
+" - The visible range is the start and end index of `s:buffer_ids`. What's in it
+"   will be displayed and of course what's not in it will be trunced.
+" ===
+function! s:GetVisibleRange(length_limit, buffer_padding)
+    let current_buffer_id = s:last_current_buffer_id
+
+    if current_buffer_id == -1
+        return [-1, -1]
+    endif
+
+    " Current buffer block:
+    " calculate the capacity left after extracted for the current bufer
+    let current_buffer_id_idx = index(s:buffer_ids, current_buffer_id)
+    let current_buffer        = s:buffers[current_buffer_id]
+    let capacity = a:length_limit - current_buffer.length - a:buffer_padding
+
+    let [left_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
+        \   capacity, a:buffer_padding, 'left')
+    let [right_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
+        \   capacity, a:buffer_padding, 'right')
+
+    return [left_idx, right_idx]
+endfunction
+
+" GetVisibleIndex: Calculate how many buffers need to truncate of @side
+" from @capacity, and return visible index of that @side.
+" ---
+" @curr_bufid_idx (Number): s:buffer_ids holds buffers position, so we need this
+" @capacity (Number): capacity
+" @padding (Number): padding
+" @side (String): 'left' or 'right'
+" ---
+" => (List)-number:
+"   $1|{idx}: the visible index
+"   $2|{capacity}: the capacity left after calculated
+" ===
+function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
+    " Truncate buffers below and above of current buffer,
+    " left is looped down and vice versa
+    let start = (a:side==#'left' ? a:curr_bufid_idx-1 : a:curr_bufid_idx+1)
+    let end   = (a:side==#'left' ? 0                  : len(s:buffers)-1)
+    let step  = (a:side==#'left' ? -1                 : 1)
+
+    " If start == end, we cannot run loop, so we need something to return
+    let idx   = a:curr_bufid_idx
+    let cap   = a:capacity
+
+    for idx in range(start, end, step)
+        let buffer = s:buffers[s:buffer_ids[idx]]
+
+        if (buffer.length + a:padding) <= cap
+            let cap = cap - buffer.length - a:padding
+        else
+            " The visual index, not the truncated index
+            let idx = (a:side=='left' ? idx+1 : idx-1 )
+            break
+        endif
+    endfor
+
+    return [idx, cap]
+endfunction
+" ================ }}}
 
 
 " GetAllElements:
+" =============== {{{
 " `GetTablineElements`
 "
 " TODO: This will stored 1 tab and its buffers, then repeat(loop), finally 
@@ -340,7 +415,6 @@ endfunction
 "   $*|buffers_elem{}s
 "   ...
 "   $$|end{} =
-" ---
 function! s:GetAllElements(left_idx, right_idx)
     let last_tab_id     = tabpagenr('$')
     let current_tab_id  = tabpagenr()
@@ -367,10 +441,11 @@ function! s:GetAllElements(left_idx, right_idx)
 
     return tab_elems
 endfunction
-
+" =============== }}
 
 
 " GetBufferElements:
+" ================== {{
 " => buffer_elems[{}] (List)-dict:
 "   $1|left_trunc_elem{}
 "   $2|visual_buffers{}:
@@ -439,85 +514,7 @@ function! s:GetBufferElements(left_idx, right_idx)
 
     return buffer_elems
 endfunction
-
-" GetVisibleRange: Return the start and end index of the visible range.
-" @length_limit (Number)
-" @buffer_padding (Number)
-" => (List)-number:
-"   $1|left_idx
-"   $2|right_idx
-" What Is Visible Range:?
-" - The visible range is the start and end index of `s:buffer_ids`. What's in it
-"   will be displayed and of course what's not in it will be trunced.
-" ===
-function! s:GetVisibleRange(length_limit, buffer_padding)
-    let current_buffer_id = s:last_current_buffer_id
-
-    if current_buffer_id == -1
-        return [-1, -1]
-    endif
-
-    " Current buffer block:
-    " calculate the capacity left after extracted for the current bufer
-    let current_buffer_id_idx = index(s:buffer_ids, current_buffer_id)
-    let current_buffer        = s:buffers[current_buffer_id]
-    let capacity = a:length_limit - current_buffer.length - a:buffer_padding
-
-    let [left_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
-        \   capacity, a:buffer_padding, 'left')
-    let [right_idx, capacity] = s:GetVisibleIndex(current_buffer_id_idx,
-        \   capacity, a:buffer_padding, 'right')
-
-    return [left_idx, right_idx]
-endfunction
-
-" GetVisibleIndex: Calculate how many buffers need to truncate of @side
-" from @capacity, and return visible index of that @side.
-" ---
-" @curr_bufid_idx (Number): s:buffer_ids holds buffers position, so we need this
-" @capacity (Number): capacity
-" @padding (Number): padding
-" @side (String): 'left' or 'right'
-" ---
-" => (List)-number:
-"   $1|{idx}: the visible index
-"   $2|{capacity}: the capacity left after calculated
-" ===
-function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
-    " Truncate buffers below and above of current buffer,
-    " left is looped down and vice versa
-    let start = (a:side==#'left' ? a:curr_bufid_idx-1 : a:curr_bufid_idx+1)
-    let end   = (a:side==#'left' ? 0                  : len(s:buffers)-1)
-    let step  = (a:side==#'left' ? -1                 : 1)
-
-    " If start == end, we cannot run loop, so we need something to return
-    let idx   = a:curr_bufid_idx
-    let cap   = a:capacity
-
-    for idx in range(start, end, step)
-        let buffer = s:buffers[s:buffer_ids[idx]]
-
-        if (buffer.length + a:padding) <= cap
-            let cap = cap - buffer.length - a:padding
-        else
-            " The visual index, not the truncated index
-            let idx = (a:side=='left' ? idx+1 : idx-1 )
-            break
-        endif
-    endfor
-
-    return [idx, cap]
-endfunction
-
-
-
-
-
-
-
-
-
-
+" ================== }}}
 
 
 
@@ -634,5 +631,110 @@ function! buffet#bonly(bang, buffer)
         endif
 
         call buffet#bwipe(a:bang, b)
+    endfor
+endfunction
+
+
+
+
+function! buffet#get_hi_attr(name, attr)
+    let vim_mode = "cterm"
+    let attr_suffix = ""
+    if has("gui")
+        let vim_mode = "gui"
+        let attr_suffix = "#"
+    endif
+
+    let value = synIDattr(synIDtrans(hlID(a:name)), a:attr . attr_suffix, vim_mode)
+
+    return value
+endfunction
+
+function! buffet#set_hi(name, fg, bg)
+    let vim_mode = "cterm"
+    if has("gui")
+        let vim_mode = "gui"
+    endif
+
+    let spec = ""
+    if a:fg != ""
+        let fg_spec = vim_mode . "fg=" . a:fg
+        let spec = fg_spec
+    endif
+
+    if a:bg != ""
+        let bg_spec = vim_mode . "bg=" . a:bg
+
+        if spec != ""
+            let bg_spec = " " . bg_spec
+        endif
+
+        let spec = spec . bg_spec
+    endif
+
+    if spec != ""
+        exec "silent hi! " . a:name . " " . spec
+    endif
+endfunction
+
+function! buffet#link_hi(name, target)
+    exec "silent hi! link " . a:name . " " . a:target
+endfunction
+
+function! buffet#set_colors()
+    " TODO: try to match user's colorscheme
+    " Issue: https://github.com/bagrat/vim-buffet/issues/5
+    " if get(g:, "buffet_match_color_scheme", 1)
+
+    hi! BuffetCurrentBuffer cterm=NONE ctermbg=2 ctermfg=8 guibg=#00FF00 guifg=#000000
+    hi! BuffetActiveBuffer cterm=NONE ctermbg=10 ctermfg=2 guibg=#999999 guifg=#00FF00
+    hi! BuffetBuffer cterm=NONE ctermbg=10 ctermfg=8 guibg=#999999 guifg=#000000
+
+    hi! link BuffetModCurrentBuffer BuffetCurrentBuffer
+    hi! link BuffetModActiveBuffer BuffetActiveBuffer
+    hi! link BuffetModBuffer BuffetBuffer
+
+    hi! BuffetTrunc cterm=bold ctermbg=11 ctermfg=8 guibg=#999999 guifg=#000000
+    hi! BuffetTab cterm=NONE ctermbg=4 ctermfg=8 guibg=#0000FF guifg=#000000
+
+    hi! link BuffetLeftTrunc BuffetTrunc
+    hi! link BuffetRightTrunc BuffetTrunc
+    hi! link BuffetEnd BuffetBuffer
+
+    if exists("*g:BuffetSetCustomColors")
+        call g:BuffetSetCustomColors()
+    endif
+
+    for left in keys(g:buffet_has_separator)
+        for right in keys(g:buffet_has_separator[left])
+            let vim_mode = "cterm"
+            if has("gui")
+                let vim_mode = "gui"
+            endif
+
+            let left_hi = g:buffet_prefix . left
+            let right_hi = g:buffet_prefix . right
+            let left_bg = buffet#get_hi_attr(left_hi, 'bg')
+            let right_bg = buffet#get_hi_attr(right_hi, 'bg')
+
+            if left_bg == ""
+                let left_bg = "NONE"
+            endif
+
+            if right_bg == ""
+                let right_bg = "NONE"
+            endif
+
+            let sep_hi = g:buffet_prefix . left . right
+            if left_bg != right_bg
+                let g:buffet_has_separator[left][right] = g:buffet_noseparator
+
+                call buffet#set_hi(sep_hi, left_bg, right_bg)
+            else
+                let g:buffet_has_separator[left][right] = g:buffet_separator
+
+                call buffet#link_hi(sep_hi, left_hi)
+            endif
+        endfor
     endfor
 endfunction
