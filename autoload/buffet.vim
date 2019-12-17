@@ -1,6 +1,6 @@
-" buffers (Dict) - Track listed buffers
+" buffers - Track listed buffers
 " ---
-" +{buffer_id} (Dict): buffer_id is key
+" ?{buffer_id} (Dict): buffer_id is key
 " Basic Info:
 "   $head (List)-str: buffer's directory abspath, split by `s:path_separator`
 "   $not_new (Number): it's not new if len(@tail) > 0; not [No Name] file ?
@@ -14,11 +14,9 @@ let s:buffers = {}
 
 
 " buffer_ids - Because buffers{} doesn't store buffers in order,
-" that's why we need this for UI process
+" that's why we need this for UI processing
 " ---
-" => (List)-number:
-"   ${buffet_id}: buffer id; list indexes is the order
-" Future Feature: (XXX) I think we can reorder this to reorder buffer's position
+" (List)-number: ${buffet_id}
 let s:buffer_ids = []
 
 
@@ -88,14 +86,15 @@ function! buffet#update()
         if !is_tracked
             " Update the buffer IDs list
             call add(s:buffer_ids, buffer_id)
-            " FIXME: Wtf is this ? Why though ?
+
+            " (FIXME) Wtf is this ? Why though ?
             let s:largest_buffer_id = max([s:largest_buffer_id, buffer_id])
         endif
     endfor
 
     " Phase II: Handling identical filenames
     " ======================================
-    " buffer_name_count (Dict) - Memoize identical filenames
+    " buffer_name_count - Memoize identical filenames
     "   +{buffer.name} (Number): count
     let buffer_name_count = {}
 
@@ -239,16 +238,20 @@ endfunction
 
 
 function! buffet#render()
+    " Step 1: Update data
     call buffet#update()
 
+    " Step 2: Get the available of capacity and calculate buffer_padding
     let [capacity, buffer_padding] = s:GetCapacityAndPadding()
 
+    " Step 3: Get the visible index range of the buffers
     let [left_idx, right_idx] = s:GetVisibleRange(capacity, buffer_padding)
 
+    " Step 4: Retrieve all of it
     let elements = s:GetAllElements(left_idx, right_idx)
 
+    " Step final: Redenring
     let render = ""
-
     for i in range(0, len(elements) - 2)
         let left = elements[i]
         let elem = left

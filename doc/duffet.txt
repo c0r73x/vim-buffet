@@ -17,16 +17,48 @@
 ==============================================================================
 CONTENTS                                                     *duffet-contents*
 
-    0. Coding convention ...............|duffet-coding-convention|
-    1. Basic knowledge .................|duffet-basic-knowledge|
-    2. The logic .......................|duffet-the-logic|
-        2.1 buffet#update().............|duffet-buffet-update|
-    3. UI ..............................|duffet-ui|
+    Style guide .....................|duffet-style-guide|
+    Basic knowledge .................|duffet-basic-knowledge|
+      - Tabline components .........|duffet-tabline-components|
+    The logic .......................|duffet-the-logic|
+      - buffet#update().............|duffet-buffet-update|
+    UI ..............................|duffet-ui|
+    Dev status ......................|duffet-dev-status|
+      - Future features ............|duffet-future-features|
 ==============================================================================
-0. Coding convention                                *duffet-coding-convention*
+Style guide                                               *duffet-style-guide*
+
+Why though ?
+- Only god knows what will be added in an empty Dictionary. 
+- Brief explaination for a function will save a lot of time of reading it.
+
+Dictionary:
+        " <name> - <purpose>
+        " ?<key> (<type>): <what_is_this>
+        " ....
+
+<key>: If key is taken from another varialbe use {<variable_name>}, otherwise
+just write a name for it.
+
+<what_is_this>: examples are better for this case:
+    <type> is not Dict:
+        " *The template above  
+    <type> is Dict:
+        " $head (List)-str: buffer's directory abspath, split by
+        "   `s:path_separator`
+        " $not_new (Number): it's not new if len(@tail) > 0; 
+        "   not [No Name] file ?
+        " $tail (String): buffer's filename
+
+Function:
+        
+
 
 ==============================================================================
 1. Basic knowledge                                    *duffet-basic-knowledge*
+------------------------------------------------------------------------------
+1.1 Tabline components                             *duffet-tabline-components*
+
 
 ==============================================================================
 2. The logic                                                *duffet-the-logic*
@@ -35,3 +67,27 @@ CONTENTS                                                     *duffet-contents*
 
 ==============================================================================
 3. UI                                                              *duffet-ui*
+==============================================================================
+Dev status                                                 *duffet-dev-status*
+
+[ ] Clean plugin/buffet.vim
+[ ] Increase performance:
+    - decrease source time
+    - benchmark with time
+    - use other languages (Rust ?)
+
+------------------------------------------------------------------------------
+- Future features                                     *duffet-future-features*
+
+[ ] Two ends separator
+
+[ ] Reordering: 
+        take the advantage of s:buffer_ids[]
+[ ] Coloring `vim-devicons`:
+        can we ?
+[ ] Sorry we don't use separator here:
+        instead of using separator character to distinguish buffers, we use 
+        odd and even highlighting
+
+
+
