@@ -1,5 +1,5 @@
-" buffers - Track listed buffers
-" ---
+" s:buffers - Track listed buffers
+" ========= {{{
 " ?{buffer_id} (Dict): buffer_id is key
 " Basic Info:
 "   $head (List)-str: buffer's directory abspath, split by `s:path_separator`
@@ -10,13 +10,15 @@
 "     to distinguish identical filename, decrease if still identical
 "   $name (String): filename to display on tabline
 "   $length (Number): filename length
+" ======= }}}
 let s:buffers = {}
 
 
-" buffer_ids - Because buffers{} doesn't store buffers in order,
+" s:buffer_ids - Because buffers{} doesn't store buffers in order,
 " that's why we need this for UI processing
-" ---
+" ============ {{{
 " (List)-number: ${buffet_id}
+" ============ }}}
 let s:buffer_ids = []
 
 
@@ -143,9 +145,9 @@ endfunction
 
 
 " IsTermOrQuickfix: Return TRUE(1) if it's a Terminal or Quickfix buffer.
+" ================= {{{
 " @bufid (Number): buffer id is used to check
 " => (Boolean): FALSE(0) if not
-" ===
 function! s:IsTermOrQuickfix(bufid) abort
     let buffer_type = getbufvar(a:bufid, "&buftype", "")
     if index(["terminal", "quickfix"], buffer_type) >= 0
@@ -153,17 +155,17 @@ function! s:IsTermOrQuickfix(bufid) abort
     endif
     return v:false
 endfunction
-
+" }}}
 
 " ComposeBufferInfo: Compose basic info: $head, $not_new, $tail based on
 " the buffer id is given.
+" ================== {{{
 " @bufid (Number) buffer id used to retrieve
 "
 " => buffer{} (Dict): return a dictionary contains 3 items:
 "   $head (String): UNDERSTAND THESE 3 at `s:buffers`
 "   $now_new (Number)
 "   $tail (String)
-" ===
 function! s:ComposeBufferInfo(bufid) abort
     let buffer_name = bufname(a:bufid)
     let buffer_head = fnamemodify(buffer_name, ':p:h')
@@ -177,16 +179,16 @@ function! s:ComposeBufferInfo(bufid) abort
 
     return buffer
 endfunction
-
+" ================== }}}
 
 " InitOccState: Init buffer's state.
+" ============= {{{
 " @buf (Dict): the buffer
 "
 " => buffer{} (Dict): UNDERSTAND THESE 3 at `s:buffers{}`
 "    $index (Number)
 "    $name (String)
 "    $length (Number)
-" ===
 function! s:InitOccState(buf) abort
     let buffer = {}
     let buffer.index = -1           " default value of $index
@@ -195,15 +197,15 @@ function! s:InitOccState(buf) abort
 
     return buffer
 endfunction
-
+" ============= }}}
 
 " RecordOcc: Record occurrences.
+" ========== {{{
 " @buffer_name_count (Dict): `buffer_name_count`
 " @buf (Dict): the buffer
 "
 " => (Dict): return the following Dict OR an Empty Dict {} if $not_new == 0
 "   ${buf.name} (Number): {current_count}
-" ===
 function! s:RecordOcc(buffer_name_count, buf) abort
     if a:buf.not_new
         let l:current_count = get(a:buffer_name_count, a:buf.name, 0)
@@ -211,9 +213,10 @@ function! s:RecordOcc(buffer_name_count, buf) abort
     endif
     return {}
 endfunction
-
+" ========== }}}
 
 " UpdateOccState: Update buffers's state.
+" =============== {{{
 " @buf (Dict): a buffer item from `s:buffers`
 "
 " => buffer{} (Dict)
@@ -231,26 +234,19 @@ function! s:UpdateOccState(buf) abort
 
     return buffer
 endfunction
+" =============== }}}
+
 
 
 " UI ==========================================================================
-
-
-
 function! buffet#render()
-    " Step 1: Update data
+
     call buffet#update()
 
-    " Step 2: Get the available of capacity and calculate buffer_padding
     let [capacity, buffer_padding] = s:GetCapacityAndPadding()
-
-    " Step 3: Get the visible index range of the buffers
     let [left_idx, right_idx] = s:GetVisibleRange(capacity, buffer_padding)
-
-    " Step 4: Retrieve all of it
     let elements = s:GetAllElements(left_idx, right_idx)
 
-    " Step final: Redenring
     let render = ""
     for i in range(0, len(elements) - 2)
         let left = elements[i]
@@ -313,8 +309,6 @@ endfunction
 
 
 " GetCapacityAndPadding:
-" What is these numbers ?
-" - 
 " ===================== {{{
 function! s:GetCapacityAndPadding()
     let gutter_len = 0
@@ -343,8 +337,7 @@ function! s:GetCapacityAndPadding()
 
     return [capacity, buffer_padding]
 endfunction
-" ===================== }}}
-
+" }}}
 
 " GetVisibleRange: Return the start and end index of the visible range.
 " ================ {{{
@@ -356,7 +349,6 @@ endfunction
 " What Is Visible Range:?
 " - The visible range is the start and end index of `s:buffer_ids`. What's in it
 "   will be displayed and of course what's not in it will be trunced.
-" ===
 function! s:GetVisibleRange(length_limit, buffer_padding)
     let current_buffer_id = s:last_current_buffer_id
 
@@ -377,8 +369,10 @@ function! s:GetVisibleRange(length_limit, buffer_padding)
 
     return [left_idx, right_idx]
 endfunction
+" }}}
 
 " GetVisibleIndex: Calculate how many buffers need to truncate of @side
+" ================ {{{
 " from @capacity, and return visible index of that @side.
 " ---
 " @curr_bufid_idx (Number): s:buffer_ids holds buffers position, so we need this
@@ -389,7 +383,6 @@ endfunction
 " => (List)-number:
 "   $1|{idx}: the visible index
 "   $2|{capacity}: the capacity left after calculated
-" ===
 function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
     " Truncate buffers below and above of current buffer,
     " left is looped down and vice versa
@@ -415,8 +408,7 @@ function! s:GetVisibleIndex(curr_bufid_idx, capacity, padding, side)
 
     return [idx, cap]
 endfunction
-" ================ }}}
-
+" }}}
 
 " GetAllElements:
 " =============== {{{
@@ -458,11 +450,9 @@ function! s:GetAllElements(left_idx, right_idx)
 
     return tab_elems
 endfunction
-" =============== }}
-
 
 " GetBufferElements:
-" ================== {{
+" ================== {{{
 " => buffer_elems[{}] (List)-dict:
 "   $1|left_trunc_elem{}
 "   $2|visual_buffers{}:
@@ -532,6 +522,7 @@ function! s:GetBufferElements(left_idx, right_idx)
     return buffer_elems
 endfunction
 " ================== }}}
+" }}}
 
 
 
