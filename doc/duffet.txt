@@ -1,4 +1,4 @@
-*duffet.txt*                                              development + buffet
+*duffet.txt*                                                development + buffet
             ____                                    ?~~bL
             z@~ b                                    |  `U,
             ]@[  |                                   ]'  z@'
@@ -17,17 +17,17 @@
 ==============================================================================
 CONTENTS                                                     *duffet-contents*
 
-    Style guide .....................|duffet-style-guide|
-        Dictionary ..................|duffet-dictionary|
-        Function ....................|duffet-function|
-    Basic knowledge .................|duffet-basic-knowledge|
-      - Tabline components .........|duffet-tabline-components|
-    The logic .......................|duffet-the-logic|
-      - buffet#update().............|duffet-buffet-update|
-    UI ..............................|duffet-ui|
-    Dev status ......................|duffet-dev-status|
-      - Performance .................|duffet-performance|
-      - Future features .............|duffet-future-features|
+    Style guide .........................|duffet-style-guide|
+        Dictionary ......................|duffet-dictionary|
+        Function ........................|duffet-function|
+    Basic knowledge .....................|duffet-basic-knowledge|
+      - Tabline components ..............|duffet-tabline-components|
+    The logic ...........................|duffet-the-logic|
+      - buffet#update()..................|duffet-buffet-update|
+    UI ..................................|duffet-ui|
+    Dev status ..........................|duffet-dev-status|
+      - Performance .....................|duffet-performance|
+      - Future features .................|duffet-future-features|
 ==============================================================================
 Style guide                                               *duffet-style-guide*
 
@@ -99,6 +99,9 @@ any_recommand_viml_coding_style_guide/
 	- buffet/.... Key mapping, etc
 	- buffet.vim
 
+[ ] Caching ?~
+Can i implement caching technique ?
+
 [ ] Asynchronous:~
 		- Render current tab while other tab(s) loading and showing ...
 		- Asynchronous for identical name processing
@@ -112,23 +115,24 @@ any_recommand_viml_coding_style_guide/
 Future features                                       *duffet-future-features*
 
 [ ] Two ends separator:~
-
 Using https://www.nerdfonts.com/ > Font Patcher Script, to create more
 separator for this feature (can i?)
 
 
-[ ] Reordering:~
-
-Take the advantage of s:buffer_ids[]
+[ ] Reordering: 🦋~
+- Take the advantage of s:buffer_ids[]
+- So you also have to reconfigure buffer next & previous ?? WTF do you mean ?
 
 
 [ ] Coloring `vim-devicons`:~
-
 Can we ?
 
 
-[ ] Sorry we don't use separator here:~
+[ ] Better numbers displaying:~
+Use regular letter number make it's hard to recognize.
 
+
+[ ] Sorry we don't use separator here:~
 Another way to show separator; instead of using separator character 
 to distinguish buffers, we use odd and even highlighting
 
@@ -136,18 +140,30 @@ Odd is buffetbuffer, while even is declared through g: (or default)
 
 
 [ ] Move to buffer below(above) of the deleted buffer (like Chrome):~
-
 If buffer1 is deleted move to buffer2
 
 
 [ ] Restore closed buffers:~
-
-For now just save the last closed buffer, i'll find a solution like Chrome,
+- Can Vim do it herself ?
+- For now just save the last closed buffer, i'll find a solution like Chrome,
 incorporate with s:buffer_ids[] to restore the old position.
+- Show list of closed buffers stack (should I intergrate it with Fzf?)
 
 
 [ ] Delete multiple buffers:~
-
 Enter: 1,3,5 -> delete those buffer
+
+
+[ ] Delete buffer when in Splitting Screen (window):~
+- You can switch to different buffer (with bn bp or b<number>), then 
+  use :bd # to the the old buffer.
+- Or you can open a file with Fzf(:Buffers, :Files) then once again 
+  use :bd # to the the old buffer.
+- (Plugin) <Delete_current_buffer>
+	- Implement: Switch to buffer right below(left) and delete the old buffer
+	- What if the "below(left)" is currently openning in another window ?
+
+
+
 ==============================================================================
 vim:tw=78:nosta:noet:ts=4:sts=0:ft=help:noet:fen:fdm=marker:
