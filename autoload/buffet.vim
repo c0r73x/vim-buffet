@@ -262,7 +262,17 @@ function! s:Render()
     let sep_len = s:Len(g:buffet_separator)
 
     let tabs_count = tabpagenr("$")
-    let tabs_len = (1 + s:Len(g:buffet_tab_icon) + 1 + sep_len) * tabs_count
+    let tabs_len = 0
+    for i in range(0, tabs_count)
+        let icon = " " . g:buffet_tab_icon
+        if exists('g:loaded_taboo') && g:loaded_taboo == 1
+            let name = TabooTabName(i)
+            if name !=# ''
+                let icon = icon . ' ' . name
+            endif
+        endif
+        let tabs_len += (1 + s:Len(icon) + 1 + sep_len)
+    endfor
 
     let left_trunc_len = 1 + s:Len(g:buffet_left_trunc_icon) + 1 + 2 + 1 + sep_len
     let right_trunc_len =  1 + 2 + 1 + s:Len(g:buffet_right_trunc_icon) + 1 + sep_len
@@ -285,7 +295,11 @@ function! s:Render()
             let render = render . "%" . elem.buffer_id . "@SwitchToBuffer@"
         endif
 
-        let highlight = s:GetTypeHighlight(elem.type)
+        if elem.type == "Tab" && tabpagenr() == elem.value
+            let highlight = s:GetTypeHighlight('TabSel')
+        else
+            let highlight = s:GetTypeHighlight(elem.type)
+        endif
         let render = render . highlight
 
         if g:buffet_show_index && s:IsBufferElement(elem)
@@ -297,6 +311,12 @@ function! s:Render()
             let icon = " " . WebDevIconsGetFileTypeSymbol(elem.value)
         elseif elem.type == "Tab"
             let icon = " " . g:buffet_tab_icon
+            if exists('g:loaded_taboo') && g:loaded_taboo == 1
+                let name = TabooTabName(elem.value)
+                if name !=# ''
+                    let icon = icon . ' ' . name
+                endif
+            endif
         endif
 
         let render = render . icon
