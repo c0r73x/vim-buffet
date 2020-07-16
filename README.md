@@ -152,6 +152,9 @@ Vimrc file, using `let <optiona-name> = <option-value>`:
   let g:buffet_use_devicons = 1
   ```
 
+  *Note: you need to have `vim-devicons` loaded before `vim-buffet` in order to
+  make this work.*
+
 * `g:buffet_tab_icon` - the character to be used as an icon for the tab items
   in the tabline.
 
@@ -191,6 +194,14 @@ Vimrc file, using `let <optiona-name> = <option-value>`:
   ```
   let g:buffet_right_trunc_icon = ">"
   ```
+
+* `g:buffet_hidden_buffers` - the types of buffers to hide from the tabline
+
+  Default:
+  ```
+  let g:buffet_hidden_buffers = ["terminal", "quickfix"]
+  ```
+  Note: this has the side effect of making all matching buffers unlisted
 
 ### Colors
 
@@ -251,6 +262,9 @@ let g:buffet_tab_icon = "\uf00a"
 let g:buffet_left_trunc_icon = "\uf0a8"
 let g:buffet_right_trunc_icon = "\uf0a9"
 ```
+
+*Note: you need to have `vim-devicons` loaded before `vim-buffet` in order to
+make this work.*
 
 #### **How to have the current buffer open in a new tab instead of a new one?**
 
