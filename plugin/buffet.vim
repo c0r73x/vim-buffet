@@ -69,17 +69,30 @@ let g:buffet_prefix = "Buffet"
 let g:buffet_has_separator = {
             \     "Tab": {
             \         "Tab": g:buffet_separator,
+            \         "TabSel": g:buffet_separator,
             \         "LeftTrunc": g:buffet_separator,
             \         "End" : g:buffet_separator,
+            \     },
+            \     "TabSel": {
+            \         "TabSel": g:buffet_separator,
+            \         "LeftTrunc": g:buffet_separator,
+            \         "End" : g:buffet_separator,
+            \         "Buffer": g:buffet_separator,
+            \         "CurrentBuffer": g:buffet_separator,
+            \         "ActiveBuffer": g:buffet_separator,
+            \         "ModBuffer": g:buffet_separator,
             \     },
             \     "LeftTrunc": {
             \         "Buffer": g:buffet_separator,
             \         "CurrentBuffer": g:buffet_separator,
             \         "ActiveBuffer": g:buffet_separator,
             \         "ModBuffer": g:buffet_separator,
+            \         "TabSel": g:buffet_separator,
+            \         "Tab": g:buffet_separator,
             \     },
             \     "RightTrunc": {
             \         "Tab": g:buffet_separator,
+            \         "TabSel": g:buffet_separator,
             \         "End": g:buffet_separator,
             \     },
             \ }

@@ -231,6 +231,7 @@ function! s:GetAllElements(capacity, buffer_padding)
 
         if tab_id == current_tab_id
             let tab_elems = tab_elems + buffer_elems
+            let elem.type = "TabSel"
         endif
     endfor
 
@@ -289,17 +290,13 @@ function! s:Render()
         let elem = left
         let right = elements[i + 1]
 
-        if elem.type == "Tab"
+        if elem.type == "Tab" || elem.type == "TabSel"
             let render = render . "%" . elem.value . "T"
         elseif s:IsBufferElement(elem) && has("nvim")
             let render = render . "%" . elem.buffer_id . "@SwitchToBuffer@"
         endif
 
-        if elem.type == "Tab" && tabpagenr() == elem.value
-            let highlight = s:GetTypeHighlight('TabSel')
-        else
-            let highlight = s:GetTypeHighlight(elem.type)
-        endif
+        let highlight = s:GetTypeHighlight(elem.type)
         let render = render . highlight
 
         if g:buffet_show_index && s:IsBufferElement(elem)
@@ -309,7 +306,7 @@ function! s:Render()
         let icon = ""
         if g:buffet_use_devicons && s:IsBufferElement(elem)
             let icon = " " . WebDevIconsGetFileTypeSymbol(elem.value)
-        elseif elem.type == "Tab"
+        elseif elem.type == "Tab" || elem.type == "TabSel"
             let icon = " " . g:buffet_tab_icon
             if exists('g:loaded_taboo') && g:loaded_taboo == 1
                 let name = TabooTabName(elem.value)
@@ -321,7 +318,7 @@ function! s:Render()
 
         let render = render . icon
 
-        if elem.type != "Tab"
+        if elem.type != "Tab" && elem.type != "TabSel"
             let render = render . " " . elem.value
         endif
 
@@ -331,13 +328,13 @@ function! s:Render()
             endif
         endif
 
-        let render = render . " "
+        let render = render . ' '
 
         let separator =  g:buffet_has_separator[left.type][right.type]
         let separator_hi = s:GetTypeHighlight(left.type . right.type)
         let render = render . separator_hi . separator
 
-        if elem.type == "Tab" && has("nvim")
+        if (elem.type == "Tab" || elem.type == "TabSel") && has("nvim")
             let render = render . "%T"
         elseif s:IsBufferElement(elem) && has("nvim")
             let render = render . "%T"
@@ -397,7 +394,7 @@ function! buffet#bwipe(bang, buffer)
 
     if btarget < 0
         echohl ErrorMsg
-        call 'No matching buffer for ' . a:buffer
+        echom 'No matching buffer for ' . a:buffer
         echohl None
 
         return
