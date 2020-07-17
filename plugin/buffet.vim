@@ -74,21 +74,16 @@ let g:buffet_has_separator = {
             \         "End" : g:buffet_separator,
             \     },
             \     "TabSel": {
+            \         "Tab": g:buffet_separator,
             \         "TabSel": g:buffet_separator,
             \         "LeftTrunc": g:buffet_separator,
             \         "End" : g:buffet_separator,
-            \         "Buffer": g:buffet_separator,
-            \         "CurrentBuffer": g:buffet_separator,
-            \         "ActiveBuffer": g:buffet_separator,
-            \         "ModBuffer": g:buffet_separator,
             \     },
             \     "LeftTrunc": {
             \         "Buffer": g:buffet_separator,
             \         "CurrentBuffer": g:buffet_separator,
             \         "ActiveBuffer": g:buffet_separator,
             \         "ModBuffer": g:buffet_separator,
-            \         "TabSel": g:buffet_separator,
-            \         "Tab": g:buffet_separator,
             \     },
             \     "RightTrunc": {
             \         "Tab": g:buffet_separator,
@@ -108,9 +103,11 @@ let g:buffet_buffer_types = [
 
 for s:type in g:buffet_buffer_types
     let g:buffet_has_separator["Tab"][s:type] = g:buffet_separator
+    let g:buffet_has_separator["TabSel"][s:type] = g:buffet_separator
     let g:buffet_has_separator[s:type] = {
                 \     "RightTrunc": g:buffet_separator,
                 \     "Tab": g:buffet_separator,
+                \     "TabSel": g:buffet_separator,
                 \     "End": g:buffet_separator,
                 \ }
 
