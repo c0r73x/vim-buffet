@@ -247,6 +247,6 @@ command! -bang -complete=buffer -nargs=? BuffetPick call buffet#pick()
 augroup buffet
     autocmd!
     autocmd VimEnter,BufAdd,TabEnter * set showtabline=2
-    autocmd BufEnter,BufLeave,BufDelete,BufWritePost * call buffet#render()
+    autocmd BufEnter,BufLeave,BufDelete,BufWritePost,BufUnload,BufWipeout * call buffet#render()
     autocmd ColorScheme * call s:SetColors()
 augroup end
