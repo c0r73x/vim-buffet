@@ -481,8 +481,11 @@ function! buffet#pick() abort
 
     if !empty(l:letter)
         if has_key(s:buffer_by_letter, l:letter)
-            let l:bufnr = s:buffer_by_letter[l:letter]
-            execute 'buffer' l:bufnr
+            if bufexists(str2nr(s:buffer_by_letter[l:letter]))
+                let l:bufnr = s:buffer_by_letter[l:letter]
+                execute 'buffer' l:bufnr
+                let l:did_switch = v:true
+            endif
         end
     end
 
