@@ -472,25 +472,20 @@ function! buffet#pick() abort
     let s:is_picking_buffer = v:true
     call buffet#render()
     redraw
-    let s:is_picking_buffer = v:false
 
     let l:char = getchar()
     let l:letter = nr2char(l:char)
-
-    let l:did_switch = v:false
 
     if !empty(l:letter)
         if has_key(s:buffer_by_letter, l:letter)
             if bufexists(str2nr(s:buffer_by_letter[l:letter]))
                 let l:bufnr = s:buffer_by_letter[l:letter]
                 execute 'buffer' l:bufnr
-                let l:did_switch = v:true
             endif
         end
     end
 
-    if !l:did_switch
-        call buffet#render()
-        redraw
-    end
+    let s:is_picking_buffer = v:false
+    call buffet#render()
+    redraw
 endfunction
