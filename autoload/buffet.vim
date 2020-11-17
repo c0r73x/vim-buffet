@@ -19,7 +19,6 @@ let s:path_separator = fnamemodify(getcwd(),':p')[-1:]
 
 function! buffet#update() abort
     let l:largest_buffer_id = max([bufnr('$'), s:largest_buffer_id])
-    let l:letters = 0
 
     for l:buffer_id in range(1, l:largest_buffer_id)
         " Check if we already keep track of this buffer
@@ -62,17 +61,10 @@ function! buffet#update() abort
         let l:buffer_head = fnamemodify(l:buffer_name, ':p:h')
         let l:buffer_tail = fnamemodify(l:buffer_name, ':t')
 
-        " Initialize the buffer object
-        let l:letter = g:buffet_letters[l:letters]
-
         let l:buffer = {}
         let l:buffer.head = split(l:buffer_head, s:path_separator)
         let l:buffer.not_new = len(l:buffer_tail)
         let l:buffer.tail = l:buffer.not_new ? l:buffer_tail : g:buffet_new_buffer_name 
-        let l:buffer.letter = l:letter
-
-        let s:buffer_by_letter[l:letter] = l:buffer_id
-        let l:letters += 1
 
         " Update the buffers map
         let s:buffers[l:buffer_id] = l:buffer
@@ -80,22 +72,32 @@ function! buffet#update() abort
         if !l:is_present
             " Update the buffer IDs list
             call add(s:buffer_ids, l:buffer_id)
+
             let s:largest_buffer_id = max([s:largest_buffer_id, l:buffer_id])
         endif
     endfor
 
     let l:buffer_name_count = {}
+    let s:buffer_by_letter = {}
+    let l:letter = 0
 
     " Set initial buffer name, and record occurrences
-    for l:buffer in values(s:buffers)
+    for l:bufs in items(s:buffers)
+        let l:buffer_id = l:bufs[0]
+        let l:buffer = l:bufs[1]
+
         let l:buffer.index = -1
         let l:buffer.name = l:buffer.tail
         let l:buffer.length = len(l:buffer.name)
+        let l:buffer.letter = g:buffet_letters[l:letter]
+        let s:buffer_by_letter[g:buffet_letters[l:letter]] = l:buffer_id
 
         if l:buffer.not_new
             let l:current_count = get(l:buffer_name_count, l:buffer.name, 0)
             let l:buffer_name_count[l:buffer.name] = l:current_count + 1
         endif
+
+        let letter += 1
     endfor
 
     " Disambiguate buffer names with multiple occurrences
