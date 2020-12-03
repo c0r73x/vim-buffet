@@ -97,7 +97,7 @@ function! buffet#update() abort
             let l:buffer_name_count[l:buffer.name] = l:current_count + 1
         endif
 
-        let letter += 1
+        let l:letter += 1
     endfor
 
     " Disambiguate buffer names with multiple occurrences
