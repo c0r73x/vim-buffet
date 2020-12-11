@@ -456,6 +456,8 @@ function! buffet#bwipe(bang, buffer) abort
     execute 'silent bwipe' . a:bang . ' ' . l:btarget
     " switch back to original window
     execute 'silent ' . l:wcurrent . 'wincmd w'
+
+    call buffet#render()
 endfunction
 
 function! buffet#bonly(bang, buffer) abort
